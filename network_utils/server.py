@@ -1,113 +1,113 @@
+import logging
 import socket
 import selectors
 import types
 import struct
 
-hostname=socket.gethostname()
-HOST=socket.gethostbyname(hostname)
+hostname = socket.gethostname()
 
-CLIENTS = 0
-MSGLEN = 8
-# HOST = '127.0.0.1'
+HOST = socket.gethostbyname(hostname)
 PORT = 10000
-C1_RC = False
-C2_RC = False
+C_MSG_LEN = 8
+B_MSG_LEN = 20
+HOST_POSITION = None
+LISTENER_POSITION = None
 
-clients = {}
-coordinates = {}
-sel = selectors.DefaultSelector()
+# protocol scheme
+# server     client
+# listen
+# ______ <- connect
+# accept connection
+# wait for game start
+# ______ -> game phase
+# ______ <-> ______
+# ** game phase **
+# close connection on quit
 
-init_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-init_sock.bind((HOST, PORT))
-init_sock.listen(2)
+class Server:
 
-print(f'initializing server on {HOST}, listen port is {PORT}')
+    def __init__(self):
+        logging.basicConfig(filename='netlog.txt', encoding='UTF-8', level=logging.DEBUG)
 
-init_sock.setblocking(False)
-sel.register(init_sock, selectors.EVENT_READ)
+        self.__other_coordinates = []
+        self.__self_coordinates = []
+        self.__sel = selectors.DefaultSelector()
+        self.__state = 0
+        self.__init_byte_array = bytes()
+        self.connected = False
 
-def checkout_client(address, status, set_other=0):
-    global C1_RC, \
-        C2_RC
-    if clients[address] == set_other:
-        C1_RC = status
-    else:
-        C2_RC = status
+        init_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        init_sock.bind((HOST, PORT))
+        init_sock.listen(1)
+        logging.debug(f"listening on {PORT}, host is {HOST}")
 
-def get_status(address):
-    global C1_RC, \
-        C2_RC
-    if clients[address] == 0:
-        return C2_RC
-    else:
-        return C1_RC
+        self.__init_sock = init_sock
+        logging.debug('server started')
 
-def accept_connection(sock):
-    global CLIENTS
-    global init_sock, sel
-    print('receiving new connection')
-    if CLIENTS > 1:
-        print(f'clients counter is {CLIENTS}, refusing connection')
-        print(f'closing listening port')
-        sel.unregister(init_sock)
-        init_sock.close()
-        return
-    CLIENTS += 1
-    connection, address = sock.accept()
-    print(f'connection accepted to {address}')
-    connection.setblocking(False)
-    data = types.SimpleNamespace(
-        address = address, bytes_send = b'', bytes_recv = b''
-    )
-    clients[address] = CLIENTS - 1
-    coordinates[clients[address]] = []
-    sel.register(connection, selectors.EVENT_WRITE | selectors.EVENT_READ, data=data)
+    def state_checkout(self):
+        logging.debug('server state is on')
+        self.__state = True
 
-def handle_connection(key, event):
-    global MSGLEN, C1_RC, C2_RC
-    sock = key.fileobj
-    data = key.data
-    client_number = clients[data.address]
-    if event & selectors.EVENT_READ:
-        if client_number == 0 and not C1_RC or client_number == 1 and not C2_RC:
-            print(f'reading {data.address}')
-            received = sock.recv(MSGLEN)
-            if received:
-                if len(data.bytes_recv) + len(received) == MSGLEN:
-                    x, y = struct.unpack('2f', data.bytes_recv + received)
-                    coordinates[client_number].append((x, y))
-                    checkout_client(data.address, True)
-                    print(f'cycle on {data.address} completed, read {MSGLEN} bytes, set RC status')
+    def init_data(self, byte_array):
+        logging.debug(f'initial data is set, size is {len(byte_array)}')
+        self.__init_byte_array = byte_array
+
+    def __accept_connection(self, sock):
+        if self.connected:
+            logging.debug('connection refused')
+            return
+
+        connection, address = sock.accept()
+        logging.debug(f'connection accepted to {address}')
+
+        connection.setblocking(False)
+        data = types.SimpleNamespace(
+            address=address, bytes_send=b'', bytes_recv=b''
+        )
+        self.connected = True
+        self.__sel.register(connection, selectors.EVENT_WRITE | selectors.EVENT_READ, data=data)
+
+    def __handle_connection(self, key, mask):
+        sock = key.fileobj
+        data = key.data
+
+        if self.__state is 0:
+            if self.__init_byte_array:
+                data.bytes_send = self.__init_byte_array
+                self.__init_byte_array = bytes()
+            elif mask & selectors.EVENT_WRITE:
+                sent = sock.send(data.bytes_send)
+                data.bytes_send = data.bytes_send[sent:]
+                if not data.bytes_send:
+                    logging.debug('initial message sent, switching server to -1')
+                    self.__state = -1
+
+        if self.__state is 1:
+
+            if mask & selectors.EVENT_READ:
+                received = sock.recv(C_MSG_LEN)
+                if received:
+                    if len(data.bytes_recv) + len(received) == MSG_LEN:
+                        x, y = struct.unpack('2f', data.bytes_recv + received)
+                        LISTENER_POSITION = (x, y)
+                        data.bytes_recv = bytes()
+                    else:
+                        data.bytes_recv += received
                 else:
-                    data.bytes_recv += received
-            else:
-                raise Exception(f"client {data.address} shut down")
-    if event & selectors.EVENT_WRITE:
-        if get_status(data.address):
-            print(f'another client is ready, writing from {data.address}')
-            if not data.bytes_send:
-                another_c_number = 1 if client_number == 0 else 0
-                data.bytes_send = struct.pack('2f', *coordinates[another_c_number].pop())
-            sent = sock.send(data.bytes_send)
-            data.bytes_send = data.bytes_send[sent:]
-            if not data.bytes_send:
-                print(f'cycle on {data.address} completed, wrote {MSGLEN} bytes')
-                checkout_client(data.address, False, set_other=1)
+                    logging.error(f'client {data.address} has ended connection')
+                    raise Exception(f'client {data.address} has ended connection')
 
-try:
+            if mask & selectors.EVENT_WRITE:
+                if not data.bytes_send:
+                    data.bytes_send = struct.pack('2f', *HOST_POSITION)
+                sent = sock.send(data.bytes_send)
+                data.bytes_send = data.bytes_send[sent:]
 
-    while True:
-        events = sel.select()
+    def loop(self):
+        events = self.__sel.select()
         for key, mask in events:
             if not key.data:
-                accept_connection(key.fileobj)
+                self.__accept_connection(key.fileobj)
             else:
-                handle_connection(key, mask)
+                self.__handle_connection(key, mask)
 
-except KeyboardInterrupt:
-    print(f'shutting down')
-
-finally:
-    sel.close()
-
-         

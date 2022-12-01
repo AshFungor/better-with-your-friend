@@ -1,4 +1,3 @@
-
 import socket
 import selectors
 import types
@@ -8,7 +7,7 @@ import time
 sel = selectors.DefaultSelector()
 HOST = '127.0.0.1'
 PORT = 10000
-MSGLEN = 8
+MSG_LEN = 8
 S1_RC = True
 S2_RC = True
 COUNT = 0
@@ -22,14 +21,15 @@ sock_1.connect_ex((HOST, PORT))
 sock_2.connect_ex((HOST, PORT))
 
 data1 = types.SimpleNamespace(
-    coordinates = (12, 12), bytes_send = b'', bytes_recv = b'', num = 1
+    coordinates=(12, 12), bytes_send=b'', bytes_recv=b'', num=1
 )
 data2 = types.SimpleNamespace(
-    coordinates = (-12, -12), bytes_send = b'', bytes_recv = b'', num = 2
+    coordinates=(-12, -12), bytes_send=b'', bytes_recv=b'', num=2
 )
 
 sel.register(sock_1, selectors.EVENT_READ | selectors.EVENT_WRITE, data=data1)
 sel.register(sock_2, selectors.EVENT_READ | selectors.EVENT_WRITE, data=data2)
+
 
 def checkout_client(address, status, set_other=1):
     global S1_RC, \
@@ -39,14 +39,15 @@ def checkout_client(address, status, set_other=1):
     else:
         S2_RC = status
 
+
 def service_connection(key, mask):
-    global MSGLEN, S1_RC, S2_RC, COUNT
+    global MSG_LEN, S1_RC, S2_RC, COUNT
     sock = key.fileobj
     data = key.data
     if mask & selectors.EVENT_READ:
         if not S1_RC and data.num == 1 or not S2_RC and data.num == 2:
-            recv_data = sock.recv(MSGLEN)  # Should be ready to read
-            if len(recv_data) + len(data.bytes_recv) == MSGLEN:
+            recv_data = sock.recv(MSG_LEN)  # Should be ready to read
+            if len(recv_data) + len(data.bytes_recv) == MSG_LEN:
                 x, y = struct.unpack('2f', recv_data + data.bytes_recv)
                 print(f'coords received: {x} and {y}')
                 checkout_client(data.num, True)
@@ -61,9 +62,10 @@ def service_connection(key, mask):
             sent = sock.send(data.bytes_send)
             data.bytes_send = data.bytes_send[sent:]
             if not data.bytes_send:
-                print(f'cycle completed, wrote {MSGLEN} bytes')
+                print(f'cycle completed, wrote {MSG_LEN} bytes')
                 checkout_client(data.num, False)
                 COUNT += 1
+
 
 start = time.time()
 try:

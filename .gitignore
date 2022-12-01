@@ -1,4 +1,9 @@
- 
+# vs code
+.vscode/
+
+# unique to this project
+network_utils/netlog.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
