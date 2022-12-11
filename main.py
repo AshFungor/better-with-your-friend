@@ -1,7 +1,8 @@
 import pygame
 import sys
+
 pygame.init()
-win = pygame.display.set_mode((1200,800))
+win = pygame.display.set_mode((1200, 800))
 pygame.display.set_caption("Ходилка-Бродилка")
 player = pygame.image.load("luigi.png")
 clock = pygame.time.Clock()
@@ -9,9 +10,6 @@ clock = pygame.time.Clock()
 x = 100
 y = 100
 speed = 10
-
-
-
 
 run = True
 while (run):
@@ -29,8 +27,7 @@ while (run):
     if keys[pygame.K_DOWN]:
         y += speed
 
-    win.blit( player, (x, y))
+    win.blit(player, (x, y))
     pygame.display.update()
-
 
 pygame.quit()

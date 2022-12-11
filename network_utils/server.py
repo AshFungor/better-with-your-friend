@@ -9,9 +9,10 @@ hostname = socket.gethostname()
 HOST = socket.gethostbyname(hostname)
 PORT = 10000
 C_MSG_LEN = 8
-B_MSG_LEN = 20
-HOST_POSITION = None
-LISTENER_POSITION = None
+B_MSG_LEN = 0
+HOST_POSITION = (0, 0)
+CLIENT_POSITION = (0, 0)
+
 
 # protocol scheme
 # server     client
@@ -27,10 +28,9 @@ LISTENER_POSITION = None
 class Server:
 
     def __init__(self):
-        logging.basicConfig(filename='netlog.txt', encoding='UTF-8', level=logging.DEBUG)
+        global HOST, PORT
+        logging.basicConfig(filename='server_log.txt', encoding='UTF-8', level=logging.DEBUG)
 
-        self.__other_coordinates = []
-        self.__self_coordinates = []
         self.__sel = selectors.DefaultSelector()
         self.__state = 0
         self.__init_byte_array = bytes()
@@ -39,6 +39,9 @@ class Server:
         init_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         init_sock.bind((HOST, PORT))
         init_sock.listen(1)
+        init_sock.setblocking(False)
+
+        self.__sel.register(init_sock, selectors.EVENT_READ)
         logging.debug(f"listening on {PORT}, host is {HOST}")
 
         self.__init_sock = init_sock
@@ -68,6 +71,7 @@ class Server:
         self.__sel.register(connection, selectors.EVENT_WRITE | selectors.EVENT_READ, data=data)
 
     def __handle_connection(self, key, mask):
+        global HOST_POSITION, CLIENT_POSITION, C_MSG_LEN
         sock = key.fileobj
         data = key.data
 
@@ -87,9 +91,9 @@ class Server:
             if mask & selectors.EVENT_READ:
                 received = sock.recv(C_MSG_LEN)
                 if received:
-                    if len(data.bytes_recv) + len(received) == MSG_LEN:
+                    if len(data.bytes_recv) + len(received) == C_MSG_LEN:
                         x, y = struct.unpack('2f', data.bytes_recv + received)
-                        LISTENER_POSITION = (x, y)
+                        CLIENT_POSITION = (x, y)
                         data.bytes_recv = bytes()
                     else:
                         data.bytes_recv += received
@@ -110,4 +114,3 @@ class Server:
                 self.__accept_connection(key.fileobj)
             else:
                 self.__handle_connection(key, mask)
-

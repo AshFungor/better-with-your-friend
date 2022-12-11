@@ -2,7 +2,8 @@
 .vscode/
 
 # unique to this project
-network_utils/netlog.txt
+*/client_log.txt
+*/server_log.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
