@@ -109,3 +109,7 @@ class Client:
         if events:
             for key, mask in events:
                 self.__handle_connection(key, mask)
+
+    def close(self):
+        self.__sel.close()
+        self.__state = None

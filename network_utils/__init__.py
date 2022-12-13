@@ -1,3 +1,3 @@
-from .server import Server
+from .server import Server, HOST, PORT
 from .client import Client
-from .server import HOST_POSITION, CLIENT_POSITION
+

@@ -61,7 +61,7 @@ class Server:
     def host_position(self):
         return self.__host_position
 
-    @host_position.setter()
+    @host_position.setter
     def host_position(self, position):
         if isinstance(position, tuple) and len(position) == 2:
             self.__host_position = position
@@ -69,8 +69,11 @@ class Server:
         raise ValueError('position must be tuple of size 2')  
 
     def initialize_main_phase(self):
-        logging.debug('server state is on')
-        self.__state = True
+        if self.__state is not None:
+            logging.debug('server state is on')
+            self.__state = True
+        else:
+            logging.error('instance of server is inactive, refusing call')
 
     def __accept_connection(self, sock):
         if self.connected:
@@ -91,7 +94,7 @@ class Server:
         sock = key.fileobj
         data = key.data
 
-        if self.__state is 0:
+        if self.__state == 0:
             if self.__init_byte_array:
                 data.bytes_send = self.__init_byte_array
                 self.__init_byte_array = bytes()
@@ -102,10 +105,10 @@ class Server:
                     logging.debug('initial message sent, switching server to -1')
                     self.__state = -1
 
-        if self.__state is 1:
+        if self.__state == 1:
 
             if mask & selectors.EVENT_READ:
-                received = sock.recv(C_MSG_LEN)
+                received = sock.recv(Server.c_msg_len)
                 if received:
                     if len(data.bytes_recv) + len(received) == Server.c_msg_len:
                         x, y = struct.unpack('2f', data.bytes_recv + received)
@@ -130,3 +133,7 @@ class Server:
                 self.__accept_connection(key.fileobj)
             else:
                 self.__handle_connection(key, mask)
+
+    def close(self):
+        self.__sel.close()
+        self.__state = None
