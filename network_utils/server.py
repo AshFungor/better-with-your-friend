@@ -8,10 +8,6 @@ hostname = socket.gethostname()
 
 HOST = socket.gethostbyname(hostname)
 PORT = 10000
-C_MSG_LEN = 8
-B_MSG_LEN = 0
-HOST_POSITION = (0, 0)
-CLIENT_POSITION = (0, 0)
 
 
 # protocol scheme
@@ -27,14 +23,20 @@ CLIENT_POSITION = (0, 0)
 
 class Server:
 
-    def __init__(self):
+    b_msg_len = 0
+    c_msg_len = 8
+
+    def __init__(self, init_byte_array = bytes()):
         global HOST, PORT
         logging.basicConfig(filename='server_log.txt', encoding='UTF-8', level=logging.DEBUG)
 
         self.__sel = selectors.DefaultSelector()
         self.__state = 0
-        self.__init_byte_array = bytes()
-        self.connected = False
+        self.__init_byte_array = init_byte_array
+        self.__connected = False
+
+        self.__client_position = (0, 0)
+        self.__host_position = (0, 0)
 
         init_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         init_sock.bind((HOST, PORT))
@@ -47,13 +49,28 @@ class Server:
         self.__init_sock = init_sock
         logging.debug('server started')
 
-    def state_checkout(self):
+    @property
+    def connected(self):
+        return self.__connected
+
+    @property
+    def client_position(self):
+        return self.__client_position
+    
+    @property
+    def host_position(self):
+        return self.__host_position
+
+    @host_position.setter()
+    def host_position(self, position):
+        if isinstance(position, tuple) and len(position) == 2:
+            self.__host_position = position
+            return
+        raise ValueError('position must be tuple of size 2')  
+
+    def initialize_main_phase(self):
         logging.debug('server state is on')
         self.__state = True
-
-    def init_data(self, byte_array):
-        logging.debug(f'initial data is set, size is {len(byte_array)}')
-        self.__init_byte_array = byte_array
 
     def __accept_connection(self, sock):
         if self.connected:
@@ -67,11 +84,10 @@ class Server:
         data = types.SimpleNamespace(
             address=address, bytes_send=b'', bytes_recv=b''
         )
-        self.connected = True
+        self.__connected = True
         self.__sel.register(connection, selectors.EVENT_WRITE | selectors.EVENT_READ, data=data)
 
     def __handle_connection(self, key, mask):
-        global HOST_POSITION, CLIENT_POSITION, C_MSG_LEN
         sock = key.fileobj
         data = key.data
 
@@ -79,7 +95,7 @@ class Server:
             if self.__init_byte_array:
                 data.bytes_send = self.__init_byte_array
                 self.__init_byte_array = bytes()
-            elif mask & selectors.EVENT_WRITE:
+            if mask & selectors.EVENT_WRITE:
                 sent = sock.send(data.bytes_send)
                 data.bytes_send = data.bytes_send[sent:]
                 if not data.bytes_send:
@@ -91,9 +107,9 @@ class Server:
             if mask & selectors.EVENT_READ:
                 received = sock.recv(C_MSG_LEN)
                 if received:
-                    if len(data.bytes_recv) + len(received) == C_MSG_LEN:
+                    if len(data.bytes_recv) + len(received) == Server.c_msg_len:
                         x, y = struct.unpack('2f', data.bytes_recv + received)
-                        CLIENT_POSITION = (x, y)
+                        self.client_position = (x, y)
                         data.bytes_recv = bytes()
                     else:
                         data.bytes_recv += received
@@ -103,7 +119,7 @@ class Server:
 
             if mask & selectors.EVENT_WRITE:
                 if not data.bytes_send:
-                    data.bytes_send = struct.pack('2f', *HOST_POSITION)
+                    data.bytes_send = struct.pack('2f', *self.host_position)
                 sent = sock.send(data.bytes_send)
                 data.bytes_send = data.bytes_send[sent:]
 
