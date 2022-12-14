@@ -1,17 +1,5 @@
 import pygame
 
-pygame.init()
-
-pygame.init()
-win = pygame.display.set_mode((500, 500))  # размеры X и Y
-pygame.display.set_caption("Название игры")
-
-run = True
-while (run):
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            run = False
-
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
@@ -248,3 +236,7 @@ def main():
 
     # Корректное закртытие программы
     pygame.quit()
+
+
+if __name__ == '__main__':
+    main()
