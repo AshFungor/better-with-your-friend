@@ -112,7 +112,7 @@ class Server:
                 if received:
                     if len(data.bytes_recv) + len(received) == Server.c_msg_len:
                         x, y = struct.unpack('2f', data.bytes_recv + received)
-                        self.client_position = (x, y)
+                        self.__client_position = (x, y)
                         data.bytes_recv = bytes()
                     else:
                         data.bytes_recv += received
