@@ -1,84 +1,115 @@
-
+import logging
 import socket
 import selectors
 import types
 import struct
-import time
 
-sel = selectors.DefaultSelector()
-HOST = '127.0.0.1'
-PORT = 10000
-MSGLEN = 8
-S1_RC = True
-S2_RC = True
-COUNT = 0
+from .server import Server
 
-sock_1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print('connected 1')
-sock_2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock_1.setblocking(False)
-sock_2.setblocking(False)
-sock_1.connect_ex((HOST, PORT))
-sock_2.connect_ex((HOST, PORT))
+# protocol scheme
+# server     client
+# listen
+# ______ <- connect
+# accept connection
+# wait for game start
+# ______ -> game phase
+# ______ <-> ______
+# ** game phase **
+# close connection on quit
 
-data1 = types.SimpleNamespace(
-    coordinates = (12, 12), bytes_send = b'', bytes_recv = b'', num = 1
-)
-data2 = types.SimpleNamespace(
-    coordinates = (-12, -12), bytes_send = b'', bytes_recv = b'', num = 2
-)
+class Client:
 
-sel.register(sock_1, selectors.EVENT_READ | selectors.EVENT_WRITE, data=data1)
-sel.register(sock_2, selectors.EVENT_READ | selectors.EVENT_WRITE, data=data2)
+    def __init__(self, host, port):
+        logging.basicConfig(filename='client_log.txt', encoding='UTF-8', level=logging.DEBUG)
 
-def checkout_client(address, status, set_other=1):
-    global S1_RC, \
-        S2_RC
-    if address == set_other:
-        S1_RC = status
-    else:
-        S2_RC = status
+        self.__sel = selectors.DefaultSelector()
+        self.__state = 0
+        self.__host = host
+        self.__port = port
 
-def service_connection(key, mask):
-    global MSGLEN, S1_RC, S2_RC, COUNT
-    sock = key.fileobj
-    data = key.data
-    if mask & selectors.EVENT_READ:
-        if not S1_RC and data.num == 1 or not S2_RC and data.num == 2:
-            recv_data = sock.recv(MSGLEN)  # Should be ready to read
-            if len(recv_data) + len(data.bytes_recv) == MSGLEN:
-                x, y = struct.unpack('2f', recv_data + data.bytes_recv)
-                print(f'coords received: {x} and {y}')
-                checkout_client(data.num, True)
-                data.coordinates = (x + 1, y + 1)
-                COUNT += 1
-            else:
-                data.recv_data += recv_data
-    if mask & selectors.EVENT_WRITE:
-        if S1_RC and data.num == 1 or S2_RC and data.num == 2:
-            if not data.bytes_send:
-                data.bytes_send = struct.pack('2f', *data.coordinates)
-            sent = sock.send(data.bytes_send)
-            data.bytes_send = data.bytes_send[sent:]
-            if not data.bytes_send:
-                print(f'cycle completed, wrote {MSGLEN} bytes')
-                checkout_client(data.num, False)
-                COUNT += 1
+        self.__client_position = (0, 0)
+        self.__host_position = (0, 0)
+        self.__base_message = bytes() if Server.b_msg_len > 0 else None
 
-start = time.time()
-try:
-    while True:
-        # time.sleep(2)
-        events = sel.select(timeout=1)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setblocking(False)
+        if not self.__connect(sock):
+            raise Exception(f'could not connect to {host} on {port}')
+
+        data = types.SimpleNamespace(
+            bytes_recv=b'', bytes_send=b''
+        )
+
+        self.__sel.register(sock, selectors.EVENT_READ | selectors.EVENT_WRITE, data=data)
+        self.__sock = sock
+
+    def __connect(self, sock):
+        try:
+            sock.connect_ex((self.__host, self.__port))
+        except:
+            return False
+        finally:
+            return True
+
+    @property
+    def client_position(self):
+        return self.__client_position
+
+    @client_position.setter
+    def client_position(self, position):
+        if isinstance(position, tuple) and len(position) == 2:
+            self.__host_position = position
+            return
+        raise ValueError('position must be tuple of size 2')
+    
+    @property
+    def host_position(self):
+        return self.__host_position
+
+    @property
+    def state(self):
+        return self.__state
+    
+    @property
+    def base_message(self):
+        if self.__base_message is None:
+            return
+        if len(self.__base_message) < Server.b_msg_len:
+            return -1
+        return self.__base_message
+
+    def __handle_connection(self, key, mask):
+        sock = key.fileobj
+        data = key.data
+        if mask & selectors.EVENT_READ:
+            if self.state == 0:
+                recv_data = sock.recv(Server.b_msg_len)
+                if len(recv_data) + len(data.bytes_recv) == Server.b_msg_len:
+                    self.__base_message = data.bytes_recv + recv_data
+                    self.__state = -1
+                    data.bytes_recv = bytes()
+            if abs(self.state) == 1:
+                recv_data = sock.recv(Server.c_msg_len)
+                if len(recv_data) + len(data.bytes_recv) == Server.c_msg_len:
+                    x, y = struct.unpack('2f', data.bytes_recv + recv_data)
+                    self.__host_position = (x, y)
+                    data.bytes_recv = bytes()
+                else:
+                    data.bytes_recv += recv_data
+                self.__state = 1
+        elif mask & selectors.EVENT_WRITE:
+            if self.state == 1:
+                if not data.bytes_send:
+                    data.bytes_send = struct.pack('2f', *self.client_position)
+                sent = sock.send(data.bytes_send)
+                data.bytes_send = data.bytes_send[sent:]
+
+    def loop(self, timeout=0):
+        events = self.__sel.select(timeout)
         if events:
             for key, mask in events:
-                service_connection(key, mask)
-        if time.time() - start > 1:
-            raise KeyboardInterrupt('times up')
+                self.__handle_connection(key, mask)
 
-except KeyboardInterrupt:
-    print('exiting')
-finally:
-    sock_1.close()
-    sock_2.close()
-    print(COUNT)
+    def close(self):
+        self.__sel.close()
+        self.__state = None
