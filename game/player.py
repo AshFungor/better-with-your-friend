@@ -9,7 +9,7 @@ class Player(pygame.sprite.Sprite):
 
         super().__init__()
 
-        self.image = pygame.image.load('game/assets/luigi.png')
+        self.image = pygame.image.load('game/assets/cube.webp')
 
         self.rect = self.image.get_rect()
 
