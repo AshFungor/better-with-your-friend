@@ -8,19 +8,26 @@ SCREEN_HEIGHT = 600
 
 class Level(object):
     def __init__(self, player):
+        """Функция создающая группы спрайтов, игркор тоже будет в ней
+        """
         self.platform_list = pygame.sprite.Group()
         self.player = player
 
     def update(self):
+        "Функция, которая обновляет экран"
         self.platform_list.update()
 
     def draw(self, screen):
+        "Функкия, рисующая все платформы на экране"
         screen.blit(BACKGROUND, (0, 0))
         self.platform_list.draw(screen)
 
 
 class BaseLevel(Level):
+    """Класс, описывающий расположение платформ"""
     def __init__(self, player):
+        """функция, отвечающая за расположение платформ в окне, можно менять конфигурацию платформ
+        на вход подаются данные player"""
         Level.__init__(self, player)
 
         level = [

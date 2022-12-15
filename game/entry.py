@@ -5,7 +5,7 @@ from .level import SCREEN_HEIGHT, SCREEN_WIDTH
 
 
 def game():
-
+    """Основной код игры"""
     pygame.init()
 
     size = [SCREEN_WIDTH, SCREEN_HEIGHT]
@@ -64,7 +64,7 @@ def game():
         current_level.draw(screen)
         active_sprite_list.draw(screen)
 
-        clock.tick(30)
+        clock.tick(60)
 
         pygame.display.flip()
 
