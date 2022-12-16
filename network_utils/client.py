@@ -6,11 +6,14 @@ import struct
 
 from .server import Server
 
+
 # protocol scheme
 # server     client
 # listen
 # ______ <- connect
 # accept connection
+# b_msg -> ______
+# transfer complete
 # wait for game start
 # ______ -> game phase
 # ______ <-> ______
@@ -46,7 +49,7 @@ class Client:
     def __connect(self, sock):
         try:
             sock.connect_ex((self.__host, self.__port))
-        except:
+        except Exception:
             return False
         finally:
             return True
@@ -58,10 +61,11 @@ class Client:
     @client_position.setter
     def client_position(self, position):
         if isinstance(position, tuple) and len(position) == 2:
-            self.__host_position = position
-            return
+            if isinstance(position[0], int) and isinstance(position[1], int):
+                self.__client_position = position
+                return
         raise ValueError('position must be tuple of size 2')
-    
+
     @property
     def host_position(self):
         return self.__host_position
@@ -69,7 +73,7 @@ class Client:
     @property
     def state(self):
         return self.__state
-    
+
     @property
     def base_message(self):
         if self.__base_message is None:
@@ -88,7 +92,9 @@ class Client:
                     self.__base_message = data.bytes_recv + recv_data
                     self.__state = -1
                     data.bytes_recv = bytes()
-            if abs(self.state) == 1:
+                else:
+                    data.bytes_recv += recv_data
+            elif abs(self.state) == 1:
                 recv_data = sock.recv(Server.c_msg_len)
                 if len(recv_data) + len(data.bytes_recv) == Server.c_msg_len:
                     x, y = struct.unpack('2f', data.bytes_recv + recv_data)
@@ -97,7 +103,7 @@ class Client:
                 else:
                     data.bytes_recv += recv_data
                 self.__state = 1
-        elif mask & selectors.EVENT_WRITE:
+        if mask & selectors.EVENT_WRITE:
             if self.state == 1:
                 if not data.bytes_send:
                     data.bytes_send = struct.pack('2f', *self.client_position)

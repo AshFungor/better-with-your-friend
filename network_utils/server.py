@@ -64,8 +64,9 @@ class Server:
     @host_position.setter
     def host_position(self, position):
         if isinstance(position, tuple) and len(position) == 2:
-            self.__host_position = position
-            return
+            if isinstance(position[0], int) and isinstance(position[1], int):
+                self.__host_position = position
+                return
         raise ValueError('position must be tuple of size 2')  
 
     def initialize_main_phase(self):
@@ -74,6 +75,7 @@ class Server:
             self.__state = True
         else:
             logging.error('instance of server is inactive, refusing call')
+            raise Exception('instance of server is inactive, refusing call')
 
     def __accept_connection(self, sock):
         if self.connected:
