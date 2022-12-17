@@ -4,9 +4,16 @@ import selectors
 import types
 import struct
 
-hostname = socket.gethostname()
+"""
+Файл с классом хоста для подключения
+к клиенту.
 
-HOST = socket.gethostbyname(hostname)
+Attributes:
+    HOST (str): текущий хост
+    PORT (int): порт для прослушивания
+"""
+
+HOST = socket.gethostbyname(socket.gethostname())
 PORT = 10000
 
 
@@ -22,11 +29,28 @@ PORT = 10000
 # close connection on quit
 
 class Server:
+    """
+    Класс для хоста peer-to-peer соединения
+
+    Attributes:
+        b_msg_len (int): длина базового сообщения
+        c_msg_len (int): длина регулярного сообщения
+    """
 
     b_msg_len = 0
     c_msg_len = 8
 
-    def __init__(self, init_byte_array = bytes()):
+    def __init__(self, init_byte_array=bytes()) -> 'Server':
+        """
+        Единственный конструктор класса, принимающий, если нужно
+        базовое сообщение.
+
+        Args:
+            init_byte_array (bytes): базовое сообщение
+
+        Returns:
+            экземпляр класса Server
+        """
         global HOST, PORT
         logging.basicConfig(filename='server_log.txt', encoding='UTF-8', level=logging.DEBUG)
 
@@ -50,32 +74,49 @@ class Server:
         logging.debug('server started')
 
     @property
-    def connected(self):
+    def connected(self) -> bool:
+        """
+        bool: статус подключения клиента (подключен он или нет?)
+        """
         return self.__connected
 
     @property
-    def client_position(self):
+    def client_position(self) -> tuple[int, int]:
+        """
+        :obj:`tuple` of :obj:`int`: кортеж координат клиента,
+        обновляемый с почти каждой итерацией
+        """
         return self.__client_position
     
     @property
-    def host_position(self):
+    def host_position(self) -> tuple[int, int]:
+        """
+        :obj:`tuple` of :obj:`int`: кортеж координат хоста,
+        который должен обновляться каждый цикл.
+        """
         return self.__host_position
 
     @host_position.setter
-    def host_position(self, position):
+    def host_position(self, position: tuple[int, int]) -> None:
         if isinstance(position, tuple) and len(position) == 2:
-            self.__host_position = position
-            return
+            if isinstance(position[0], int) and isinstance(position[1], int):
+                self.__host_position = position
+                return
         raise ValueError('position must be tuple of size 2')  
 
-    def initialize_main_phase(self):
+    def initialize_main_phase(self) -> None:
+        """
+        Метод для перевода хоста в активную фазу.
+        """
         if self.__state is not None:
             logging.debug('server state is on')
             self.__state = True
         else:
             logging.error('instance of server is inactive, refusing call')
+            raise Exception('instance of server is inactive, refusing call')
 
-    def __accept_connection(self, sock):
+    # вспомогательный метод для настройки соединения
+    def __accept_connection(self, sock: socket.socket) -> None:
         if self.connected:
             logging.debug('connection refused')
             return
@@ -90,7 +131,8 @@ class Server:
         self.__connected = True
         self.__sel.register(connection, selectors.EVENT_WRITE | selectors.EVENT_READ, data=data)
 
-    def __handle_connection(self, key, mask):
+    # вспомогательный метод для обработки сокета
+    def __handle_connection(self, key: selectors.SelectorKey, mask: int) -> None:
         sock = key.fileobj
         data = key.data
 
@@ -109,6 +151,7 @@ class Server:
 
             if mask & selectors.EVENT_READ:
                 received = sock.recv(Server.c_msg_len)
+                logging.debug(f'bytes received: {received}')
                 if received:
                     if len(data.bytes_recv) + len(received) == Server.c_msg_len:
                         x, y = struct.unpack('2f', data.bytes_recv + received)
@@ -124,9 +167,15 @@ class Server:
                 if not data.bytes_send:
                     data.bytes_send = struct.pack('2f', *self.host_position)
                 sent = sock.send(data.bytes_send)
+                logging.debug(f'bytes written: {sent}')
                 data.bytes_send = data.bytes_send[sent:]
 
-    def loop(self):
+    def loop(self) -> None:
+        """
+        Главный метод класса, отвечающий за
+        обработку сообщений клиента и
+        отправку данных хостом.
+        """
         events = self.__sel.select()
         for key, mask in events:
             if not key.data:
@@ -134,6 +183,11 @@ class Server:
             else:
                 self.__handle_connection(key, mask)
 
-    def close(self):
+    def close(self) -> None:
+        """
+        Деструктор класса, который закрывает запись
+        и чтение сокета.
+        """
+        logging.debug('closing instance, setting state to None')
         self.__sel.close()
         self.__state = None
