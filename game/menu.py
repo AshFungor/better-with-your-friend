@@ -1,37 +1,89 @@
-import tkinter as tk
-from tkinter import ttk
+import pygame
+import pygame_gui
+from network_utils import Server, Client, HOST, PORT
+from .entry import SCREEN_HEIGHT, SCREEN_WIDTH
 
-class App(tk.Tk):
+
+class StartMenu:
+
     def __init__(self):
-        super().__init__()
-        self.btn = tk.Button(self, text="           Играть           ", command=self.start_game)
-        self.btn.pack(padx=120, pady=5)
-        self.btn = tk.Button(self, text="Играть с друзьями", command=self.multiplayer)
-        self.btn.pack(padx=120, pady=5)
-        self.btn = tk.Button(self, text="           Выход           ", command=self.quit)
-        self.btn.pack(padx=120, pady=5)
+
+        pygame.init()
+
+        self.__surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.__ui_manager = pygame_gui.ui_manager.UIManager((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.__start_single_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((300, 275), (200, 50)),
+                                                                  text='начать',
+                                                                  manager=self.__ui_manager)
+        self.__begin_session_button = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect((300, 275 + 50 + 25), (200, 50)),
+            text='создать сервер',
+            manager=self.__ui_manager)
+        self.__join_session_button = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect((300, 275 + 50 + 25 + 50 + 25), (200, 50)),
+            text='создать сервер',
+            manager=self.__ui_manager)
+
+    def process_event(self, event):
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED:
+            if event.ui_element == self.__start_single_button:
+                return None
+            if event.ui_element == self.__join_session_button:
+                return 1
+            if event.ui_element == self.__begin_session_button:
+                return HostMenu()
+
+        self.__ui_manager.process_events(event)
+        return self
+
+    def loop(self, delta, parent_surface):
+
+        self.__surface.blit(parent_surface, (0, 0))
+        self.__ui_manager.update(delta)
+        self.__ui_manager.draw_ui(self.__surface)
 
 
-    def start_game(self):
-        print("начало игры")
+class HostMenu:
 
-    def quit(self):
-        app.destroy()
+    def __init__(self):
 
-    def multiplayer(self):
-        entry = ttk.Entry()
-        entry.pack( padx=6, pady=6)
+        pygame.init()
+        lbl_text = f'ожидание игрока... хост: {HOST}, порт: {PORT}'
 
-        btn = ttk.Button(text="ok", command=self.multiplayer)
-        btn.pack( padx=6, pady=6)
+        self.__server = Server()
+        self.__state = 0
+        self.__surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.__ui_manager = pygame_gui.ui_manager.UIManager((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.__info_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((200, 250), (400, 50)),
+                                                        text=lbl_text,
+                                                        manager=self.__ui_manager)
+        self.__start_game_button = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect((300, 250 + 50 + 25), (200, 50)),
+            text='начать',
+            manager=self.__ui_manager)
+        self.__start_game_button.disable()
 
-        label = ttk.Label()
-        label.pack( padx=6, pady=6)
-        label["text"] = entry.get()
-        print(label)
+    def __update_status(self):
 
+        self.__start_game_button.enable()
+        self.__info_label.text = 'игрок присоединился!'
+        self.__state = 1
 
-if __name__ == "__main__":
-    app = App()
-    app.title("Better with your friend")
-    app.mainloop()
+    def process_event(self, event):
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED:
+            if event.ui_element == self.__start_game_button:
+                return self.__server
+
+        self.__ui_manager.process_events(event)
+        return self
+
+    def loop(self, delta, parent_surface):
+
+        self.__server.loop(timeout=delta)
+        if self.__server.connected and not self.__state:
+            self.__update_status()
+        self.__surface.blit(parent_surface, (0, 0))
+        self.__ui_manager.update(delta)
+        self.__ui_manager.draw_ui(self.__surface)

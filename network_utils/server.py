@@ -170,13 +170,16 @@ class Server:
                 logging.debug(f'bytes written: {sent}')
                 data.bytes_send = data.bytes_send[sent:]
 
-    def loop(self) -> None:
+    def loop(self, timeout=0.01) -> None:
         """
         Главный метод класса, отвечающий за
         обработку сообщений клиента и
         отправку данных хостом.
+
+        Args:
+             timeout (int): время задержки в секундах
         """
-        events = self.__sel.select()
+        events = self.__sel.select(timeout=timeout)
         for key, mask in events:
             if not key.data:
                 self.__accept_connection(key.fileobj)

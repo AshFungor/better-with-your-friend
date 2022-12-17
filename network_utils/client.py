@@ -157,7 +157,7 @@ class Client:
                 logging.debug(f'bytes sent: {sent}')
                 data.bytes_send = data.bytes_send[sent:]
 
-    def loop(self, timeout=0) -> None:
+    def loop(self, timeout=0.01) -> None:
         """
         Главный метод класса, отвечающий за
         обработку сообщений хоста и
