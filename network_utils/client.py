@@ -56,6 +56,7 @@ class Client:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setblocking(False)
         if not self.__connect(sock):
+            sock.close()
             logging.error(f'could not connect to {host} on {port}')
             raise ConnectionError(f'could not connect to {host} on {port}')
 
@@ -71,10 +72,9 @@ class Client:
     def __connect(self, sock: socket.socket) -> bool:
         try:
             sock.connect_ex((self.__host, self.__port))
+            return True
         except:
             return False
-        finally:
-            return True
 
     @property
     def client_position(self) -> tuple[int, int]:
