@@ -56,7 +56,7 @@ class HostMenu:
         self.__state = 0
         self.__surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.__ui_manager = pygame_gui.ui_manager.UIManager((SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.__info_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((200, 250), (400, 50)),
+        self.__info_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((50, 250), (500, 50)),
                                                         text=lbl_text,
                                                         manager=self.__ui_manager)
         self.__start_game_button = pygame_gui.elements.UIButton(
@@ -102,7 +102,7 @@ class ClientMenu:
         self.__state = 0
         self.__surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.__ui_manager = pygame_gui.ui_manager.UIManager((SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.__info_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((200, 150), (400, 50)),
+        self.__info_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((50, 150), (500, 50)),
                                                         text=lbl_text,
                                                         manager=self.__ui_manager)
         self.__host_input = pygame_gui.elements.UITextEntryBox(
@@ -123,7 +123,7 @@ class ClientMenu:
             if event.ui_element == self.__ask_button:
                 try:
                     self.__client = Client(self.__host_input.get_text(),
-                                           self.__port_input.get_text())
+                                           int(self.__port_input.get_text()))
                     self.__client.loop()
                     self.__state = 1
                     self.__info_label.set_text('ожидание хоста...')

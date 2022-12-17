@@ -14,7 +14,7 @@ Attributes:
 """
 
 HOST = socket.gethostbyname(socket.gethostname())
-PORT = 10000
+PORT = 5000
 
 
 # protocol scheme
