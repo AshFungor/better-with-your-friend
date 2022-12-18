@@ -179,7 +179,7 @@ class Server:
         Args:
              timeout (int): время задержки в секундах
         """
-        events = self.__sel.select(timeout=timeout)
+        events = self.__sel.select(timeout)
         for key, mask in events:
             if not key.data:
                 self.__accept_connection(key.fileobj)
