@@ -96,16 +96,16 @@ class AnotherPlayer(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
     @property
-    def coordinates(self) -> tuple[int, int]:
+    def coordinates(self) -> tuple[float, float]:
         """
         :obj:`tuple` of :obj:`int`: координаты другого игрока
         """
         return self.rect.x, self.rect.y
 
     @coordinates.setter
-    def coordinates(self, new: tuple[int, int]) -> None:
+    def coordinates(self, new: tuple[float, float]) -> None:
         if isinstance(new, tuple) and len(new) == 2:
-            if isinstance(new[0], int) and isinstance(new[1], int):
+            if isinstance(new[0], float) and isinstance(new[1], float):
                 self.rect.x, self.rect.y = new
                 return
         raise ValueError('new must be tuple of two ints')
