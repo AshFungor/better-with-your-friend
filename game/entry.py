@@ -170,8 +170,8 @@ def client_game(client: Client):
     player.level = current_level
 
     second = current_level.another_player
-    second.x = 0
-    second.y = 0
+    second.x = 200
+    second.y = SCREEN_HEIGHT - second.rect.height
     active_sprite_list.add(second)
 
     player.rect.x = 340

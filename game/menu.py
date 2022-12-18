@@ -144,7 +144,7 @@ class ClientMenu:
 
         if self.__state != 0:
             self.__client.loop(timeout=delta)
-            if self.__client.state() == 1:
+            if self.__client.state == 1:
                 return self.__client
         self.__surface.blit(parent_surface, (0, 0))
         self.__ui_manager.update(delta)
