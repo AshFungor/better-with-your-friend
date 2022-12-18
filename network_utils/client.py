@@ -143,7 +143,7 @@ class Client:
                 recv_data = sock.recv(Server.c_msg_len)
                 logging.debug(f'state: {self.__state}, bytes received: {recv_data}')
                 if len(recv_data) + len(data.bytes_recv) == Server.c_msg_len:
-                    x, y = struct.unpack('2f', data.bytes_recv + recv_data)
+                    x, y = map(int, struct.unpack('2f', data.bytes_recv + recv_data))
                     self.__host_position = (x, y)
                     data.bytes_recv = bytes()
                 else:

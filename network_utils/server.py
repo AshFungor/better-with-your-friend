@@ -154,7 +154,7 @@ class Server:
                 logging.debug(f'bytes received: {received}')
                 if received:
                     if len(data.bytes_recv) + len(received) == Server.c_msg_len:
-                        x, y = struct.unpack('2f', data.bytes_recv + received)
+                        x, y = map(int, struct.unpack('2f', data.bytes_recv + received))
                         self.__client_position = (x, y)
                         data.bytes_recv = bytes()
                     else:
