@@ -1,8 +1,7 @@
-import socket
 import selectors
-import types
+import socket
 import struct
-import logging
+import types
 
 hostname = socket.gethostname()
 HOST = socket.gethostbyname(hostname)

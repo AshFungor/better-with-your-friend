@@ -1,10 +1,11 @@
-from network_utils import Server, Client, HOST, PORT
-
-import unittest
-from unittest.mock import patch, Mock
 import struct
-from mockselector.selector import MockSocket, ListenSocket, MockSelector
+import unittest
 from selectors import EVENT_READ, EVENT_WRITE
+from unittest.mock import patch, Mock
+
+from mockselector.selector import MockSocket, ListenSocket, MockSelector
+
+from network_utils import Server, Client, HOST, PORT
 
 
 @patch('socket.socket')
@@ -63,14 +64,12 @@ class ServerTests(unittest.TestCase):
         server.close()
 
     def test_switcher_method(self, selector, sock):
-
         server = Server()
         server.__state = None
         self.assertRaises(Exception, server.initialize_main_phase())
         server.close()
 
     def test_position_setter(self, selector, sock):
-
         server = Server()
         with self.assertRaises(ValueError):
             server.host_position = 'hello world!'
@@ -139,9 +138,3 @@ class ClientTests(unittest.TestCase):
         client.loop()
         self.test_sock.send.assert_called_with(struct.pack('2f', -2, -3))
         client.close()
-
-
-
-
-
-

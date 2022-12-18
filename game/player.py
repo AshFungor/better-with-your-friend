@@ -1,7 +1,5 @@
 import pygame
 
-
-BACKGROUND = pygame.image.load('game/assets/bg.png')
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
@@ -87,18 +85,27 @@ class Player(pygame.sprite.Sprite):
 
 
 class AnotherPlayer(pygame.sprite.Sprite):
+    """
+    Класс для представления второго игрока.
+    """
 
-    def __init__(self):
-        """Инициализирует платформу"""
+    def __init__(self) -> 'AnotherPlayer':
+        """Конструктор класса другого игрока."""
         super().__init__()
         self.image = pygame.image.load('game/assets/another_player.png')
         self.rect = self.image.get_rect()
 
     @property
-    def coordinates(self):
+    def coordinates(self) -> tuple[int, int]:
+        """
+        :obj:`tuple` of :obj:`int`: координаты другого игрока
+        """
         return self.rect.x, self.rect.y
 
     @coordinates.setter
-    def coordinates(self, new):
-        self.rect.x, self.rect.y = new
-
+    def coordinates(self, new: tuple[int, int]) -> None:
+        if isinstance(new, tuple) and len(new) == 2:
+            if isinstance(new[0], int) and isinstance(new[1], int):
+                self.rect.x, self.rect.y = new
+                return
+        raise ValueError('new must be tuple of two ints')

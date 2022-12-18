@@ -1,8 +1,8 @@
 import logging
-import socket
 import selectors
-import types
+import socket
 import struct
+import types
 from typing import Union
 
 from .server import Server

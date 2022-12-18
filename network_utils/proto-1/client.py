@@ -1,8 +1,8 @@
-import socket
 import selectors
-import types
+import socket
 import struct
 import time
+import types
 
 sel = selectors.DefaultSelector()
 HOST = '127.0.0.1'

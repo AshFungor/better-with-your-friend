@@ -1,5 +1,5 @@
-from .server import Server, HOST, PORT
 from .client import Client
+from .server import Server, HOST, PORT
 
 """
 Этот модуль содержит средства

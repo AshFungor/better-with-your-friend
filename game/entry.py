@@ -1,8 +1,9 @@
 import pygame
-from .level import BaseLevel, MultiplayerLevel
-from .player import Player
-from .level import SCREEN_HEIGHT, SCREEN_WIDTH
+
 from network_utils import Server, Client
+from .level import BaseLevel, MultiplayerLevel
+from .player import SCREEN_HEIGHT, SCREEN_WIDTH
+from .player import Player
 
 
 def single_game():
@@ -75,7 +76,6 @@ def single_game():
 
 
 def host_game(server: Server):
-
     pygame.init()
     server.initialize_main_phase()
 
@@ -223,5 +223,3 @@ def client_game(client: Client):
         pygame.display.flip()
 
     pygame.quit()
-
-

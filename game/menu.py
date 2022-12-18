@@ -1,8 +1,10 @@
+import typing
+
 import pygame
 import pygame_gui
+
 from network_utils import Server, Client, HOST, PORT
-from .entry import SCREEN_HEIGHT, SCREEN_WIDTH
-import typing
+from .player import SCREEN_HEIGHT, SCREEN_WIDTH
 
 """
 Файл с классами меню.

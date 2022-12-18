@@ -1,8 +1,10 @@
-from game import *
-import pygame
-from network_utils import Client, Server
 import pathlib
 import sys
+
+import pygame
+
+from game import *
+from network_utils import Client, Server
 
 
 def redirect(return_value):

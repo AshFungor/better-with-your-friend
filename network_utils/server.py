@@ -1,8 +1,8 @@
 import logging
-import socket
 import selectors
-import types
+import socket
 import struct
+import types
 
 """
 Файл с классом хоста для подключения
@@ -87,7 +87,7 @@ class Server:
         обновляемый с почти каждой итерацией
         """
         return self.__client_position
-    
+
     @property
     def host_position(self) -> tuple[int, int]:
         """
@@ -102,7 +102,7 @@ class Server:
             if isinstance(position[0], int) and isinstance(position[1], int):
                 self.__host_position = position
                 return
-        raise ValueError('position must be tuple of size 2')  
+        raise ValueError('position must be tuple of size 2')
 
     def initialize_main_phase(self) -> None:
         """
