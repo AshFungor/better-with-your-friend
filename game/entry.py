@@ -95,6 +95,8 @@ def host_game(server: Server):
     player.level = current_level
 
     second = current_level.another_player
+    second.rect.x = 340 - player.rect.width
+    second.rect.y = SCREEN_HEIGHT - player.rect.height
 
     player.rect.x = 340
     player.rect.y = SCREEN_HEIGHT - player.rect.height
@@ -168,8 +170,10 @@ def client_game(client: Client):
 
     second = current_level.another_player
     active_sprite_list.add(second)
+    second.rect.x = 340
+    second.rect.y = SCREEN_HEIGHT - player.rect.height
 
-    player.rect.x = 340
+    player.rect.x = 340 - player.rect.width
     player.rect.y = SCREEN_HEIGHT - player.rect.height
     active_sprite_list.add(player)
 
