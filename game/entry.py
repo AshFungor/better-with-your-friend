@@ -2,8 +2,8 @@ import pygame
 
 from network_utils import Server, Client
 from .level import BaseLevel, MultiplayerLevel
-from .player import SCREEN_HEIGHT, SCREEN_WIDTH
 from .player import Player
+from .player import SCREEN_HEIGHT, SCREEN_WIDTH
 
 
 def single_game():
