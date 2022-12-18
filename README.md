@@ -7,7 +7,7 @@
 ```
 git clone https://github.com/AshFungor/better-with-your-friend
 cd better-with-your-friend
-make && make clean
+make install && make test && make clean
 ``` 
 
 Если тесты прошли успешно, можно начинать играть.
