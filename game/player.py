@@ -1,8 +1,7 @@
 import pygame
 
 
-BACKGROUND = pygame.Surface((800, 600))
-BACKGROUND.fill(pygame.Color('#FFFFFF'))
+BACKGROUND = pygame.image.load('game/assets/bg.png')
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 

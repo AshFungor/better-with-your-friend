@@ -21,7 +21,7 @@ class StartMenu:
             manager=self.__ui_manager)
         self.__join_session_button = pygame_gui.elements.UIButton(
             relative_rect=pygame.Rect((300, 275 + 50 + 25 + 50 + 25), (200, 50)),
-            text='создать сервер',
+            text='присоединиться',
             manager=self.__ui_manager)
 
     def process_event(self, event):
