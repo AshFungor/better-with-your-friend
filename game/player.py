@@ -1,5 +1,10 @@
 import pygame
-from .level import SCREEN_HEIGHT, SCREEN_WIDTH
+
+
+BACKGROUND = pygame.Surface((800, 600))
+BACKGROUND.fill(pygame.Color('#FFFFFF'))
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
 
 
 class Player(pygame.sprite.Sprite):
@@ -9,7 +14,7 @@ class Player(pygame.sprite.Sprite):
 
         super().__init__()
 
-        self.image = pygame.image.load('game/assets/cube.webp')
+        self.image = pygame.image.load('game/assets/main_player.png')
 
         self.rect = self.image.get_rect()
 
@@ -80,3 +85,21 @@ class Player(pygame.sprite.Sprite):
 
     def flip(self):
         self.image = pygame.transform.flip(self.image, True, False)
+
+
+class AnotherPlayer(pygame.sprite.Sprite):
+
+    def __init__(self):
+        """Инициализирует платформу"""
+        super().__init__()
+        self.image = pygame.image.load('game/assets/another_player.png')
+        self.rect = self.image.get_rect()
+
+    @property
+    def coordinates(self):
+        return self.rect.x, self.rect.y
+
+    @coordinates.setter
+    def coordinates(self, new):
+        self.rect.x, self.rect.y = new
+
