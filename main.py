@@ -31,7 +31,7 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
     run = True
     while run:
-        delta = clock.tick(30) / 1000.0
+        delta = clock.tick(60) / 1000.0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
