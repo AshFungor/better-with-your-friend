@@ -9,6 +9,6 @@ install:
 	$(PIP) install -r requirements.txt
 
 clean:
-	find . -type d -name '*log*' -exec rm -r {} +
-	find . -type d -name '*cache*' -exec rm -r {} +
+	find . -name '*log*' -delete
+	find . -name '*cache*' -delete
 
